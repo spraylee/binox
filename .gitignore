@@ -1,0 +1,6 @@
+/target
+/.verify-cache
+/.selftest-cache
+/.selftest-run
+**/*.part
+.DS_Store
