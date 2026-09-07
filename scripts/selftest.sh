@@ -330,6 +330,47 @@ else
 fi
 
 echo
+echo "== 8. bootstrap.sh 可移植性（macOS BSD/BWK awk 兼容）=="
+# 历史坑：gsub(/[/?#]/…) 里的 / 在 BWK 系 awk（macOS 自带）里报
+# nonterminated character class。此处模拟 Location 头解析全链路，
+# 若系统有 original-awk（BWK 血统）优先用它跑，最接近 macOS 行为。
+PORTABLE_AWK="awk"
+if command -v original-awk >/dev/null 2>&1; then
+  PORTABLE_AWK="original-awk"
+fi
+echo "用 ${PORTABLE_AWK} 模拟 Location 解析"
+PORTABLE_TEST_FAIL=0
+for loc in \
+  "https://github.com/spraylee/binox/releases/tag/v9.9.9" \
+  "https://github.com/spraylee/binox/releases/tag/v9.9.9?foo=bar" \
+  "https://glob-expansion-guard.invalid/releases/tag/v1!WEIRD" ; do
+  ver="$(printf 'HTTP/2 302\r\nlocation: %s\r\n\r\n' "$loc" \
+    | "$PORTABLE_AWK" 'tolower($1)=="location:" { print $2; exit }' \
+    | tr -d '\r' \
+    | { read -r L; case "$L" in
+         */releases/tag/*) L="${L#*releases/tag/}"; L="${L%%[/?#]*}"; printf '%s' "$L" ;;
+       esac; })" || ver=""
+  echo "  ${loc} -> [${ver}]"
+  case "$ver" in
+    v9.9.9|v1!WEIRD) : ;;
+    "") PORTABLE_TEST_FAIL=1; echo "  !! 未解析出版本（URL 缺 /releases/tag/ 时应返回空，此条为预期空）" ;;
+    *) : ;;
+  esac
+done
+if [ "$PORTABLE_TEST_FAIL" -ne 0 ]; then
+  bad "Location 解析在 ${PORTABLE_AWK} 下不可用"
+else
+  ok "Location 解析兼容 ${PORTABLE_AWK}（BWK/BSD awk 家族）"
+fi
+
+# bootstrap.sh 本体语法检查（sh -n）
+if sh -n scripts/bootstrap.sh; then
+  ok "scripts/bootstrap.sh 通过 sh -n 语法检查"
+else
+  bad "scripts/bootstrap.sh 语法检查失败"
+fi
+
+echo
 echo "结果: ${PASS} 通过 / ${FAIL} 失败"
 if [ "$FAIL" -ne 0 ]; then
   exit 1

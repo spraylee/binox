@@ -1,6 +1,6 @@
 [package]
 name = "binox"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "GitHub Release 二进制的零配置运行器"
 license = "MIT"

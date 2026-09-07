@@ -50,8 +50,16 @@ query_latest_version() {
     | awk 'tolower($1)=="location:" { print $2; exit }' \
     | tr -d '\r')
   [ -n "$loc" ] || return 0
-  printf '%s\n' "$loc" \
-    | awk -F'/releases/tag/' 'NF>1 { gsub(/[/?#].*$/, "", $2); print $2; exit }'
+  # 注意：此处刻意不用 awk 正则（如 gsub(/[/?#]/…))——BSD/BWK awk（macOS 自带）
+  # 的字符类里不允许出现 /，会报 nonterminated character class。
+  # 用 POSIX sh 参数展开剥出 tag，全部 awk 实现通用。
+  case "$loc" in
+    */releases/tag/*)
+      loc="${loc#*releases/tag/}"
+      loc="${loc%%[/?#]*}"
+      printf '%s\n' "$loc"
+      ;;
+  esac
 }
 
 if [ -z "$VERSION" ]; then
