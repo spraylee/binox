@@ -110,6 +110,20 @@ binox spraylee/tavily-mcp-multi-key --list-tools
 
 找不到当前平台的预编译包就报错退出，**不会**回退编译，也**不会**执行任何 install 脚本。
 
+## For AI agents
+
+This repo ships a skill (root `SKILL.md`) and a live-docs endpoint, so agents
+never rely on stale instructions:
+
+```sh
+npx skills add spraylee/binox -g          # install the thin-pointer skill
+curl -fsSL https://binox.spraylee.com/llms.txt   # always-fresh docs
+```
+
+The skill is deliberately **thin** (single file, rarely changes) and points
+here for anything version-specific. `npx skills update` keeps it in sync with
+the repo's main branch.
+
 ## 开发
 
 ```sh
